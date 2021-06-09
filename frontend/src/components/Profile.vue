@@ -1,0 +1,133 @@
+<template>
+    <div id="profileContainer">
+        <div style="margin-bottom: 15%" v-if="!deleteAccount">
+            <h2>User ID</h2>
+            <p style="word-wrap:break-word;">{{ userDetails.UserID }}</p>
+        </div>
+        <div style="margin-bottom: 15%"  v-if="!deleteAccount">
+            <h2>Username</h2>
+            <p style="word-wrap:break-word;">{{ userDetails.Username }}</p>
+        </div>
+        <div style="margin-bottom: 15%"  v-if="!deleteAccount">
+            <h2>Email</h2>
+            <p style="word-wrap:break-word;">{{ userDetails.Email }}</p>
+        </div>
+        <button id="deleteBtn" v-if="!deleteAccount" @click.prevent="deleteAccount = !deleteAccount" type="submit">Delete Profile</button>
+        <div v-else>
+            <p style="color: black; text-align: center;">Are you sure you want to delete your profile?</p>
+            <div id="containerYesNo" style="display: flex; justify-content: space-around">
+                <button style="width: 30%" @click.prevent="deleteProfile" type="submit">Yes</button>
+                <button style="width: 30%" @click.prevent="deleteAccount = !deleteAccount">No</button>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+import axios from 'axios';
+
+export default {
+    name: 'Profile',
+    data () {
+        return {
+            userDetails: [],
+            deleteAccount: false
+        }
+    },
+    methods: {
+        getUserDetails() {
+            axios.get('http://localhost:3000/api/auth/profile/' + this.$route.params.userId,
+            { headers:
+                {
+                'Authorization': `Bearer ${sessionStorage.getItem('token')}`, 
+                }
+            }).then((response) => {
+                if (response.data.status === '200') {
+                    this.userDetails = response.data.data[0]
+                } else if (response.data.status === '401') {
+                    alert(response.data.message)
+                    this.$store.commit('logout')
+                } else {
+                    alert(response.data.message)
+                }
+            }).catch((err => {
+                alert(err)
+            }))
+        },
+        deleteProfile() {
+            axios.delete('http://localhost:3000/api/auth/deleteprofile/' + this.$route.params.userId, {
+                headers: {
+                    Authorization: `Bearer ${sessionStorage.getItem('token')}`
+                },
+            }).then((response) => {
+                if (response.data.status === '200') {
+                    alert('profile deleted')
+                    this.$store.commit('logout')
+                } else if (response.data.status === '401') {
+                    alert(response.data.message)
+                    this.$router.push('/')
+                    this.$store.commit('logout')
+                } else {
+                    alert(response.data.message)
+                } 
+            }).catch((err => {
+                alert(err)
+            }))
+        }
+    },
+    beforeMount() {
+        this.getUserDetails()
+    }
+}
+</script>
+
+<style lang="scss">
+#profileContainer {
+    border: 1px solid gray;
+    border-radius: 20px;
+    padding: 20px;
+    width: 25%;
+    display: flex;
+    flex-flow: column;
+    justify-content: space-between;
+    margin: auto;
+    background: white;
+}
+
+#deleteBtn {
+    font-size: 120%;
+    margin: 10% auto 2% auto;
+    padding: 10px;
+    border-radius: 15px;
+    width: 50%;
+    outline: none;
+    background-color: lightgrey;
+    color: orangered;
+    cursor: pointer;
+    &:hover {
+      opacity: 0.8;
+      background-color: orangered;
+      color: white;
+    }
+}
+
+@media only screen and (max-width: 460px) {
+    #profileContainer {
+        margin: 0 0;
+        width: 80%;
+    }
+}
+
+@media only screen and (min-width: 461px) and (max-width: 1024px) {
+    #profileContainer {
+        width: 80%;
+    }
+    #profileContainer > * {
+        font-size: 1.5em;
+    }
+    #containerYesNo > * {
+        font-size: 1em;
+    }
+}
+
+</style>
